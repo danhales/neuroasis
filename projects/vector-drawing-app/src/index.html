@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Algorithm Canvas</title>
+    <style>
+        :root {
+            /* Theme variables */
+            --bg-primary: #f5f5f7;
+            --bg-secondary: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --accent-primary: #0071e3;
+            --accent-secondary: #34c759;
+            --accent-tertiary: #ff9500;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --transition-default: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        }
+
+        /* Dark mode theme */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2c2c2e;
+                --text-primary: #f5f5f7;
+                --text-secondary: #a1a1a6;
+                --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+                --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow-sm);
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            color: white;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition-default);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .btn.primary {
+            background-color: var(--accent-primary);
+            color: white;
+            border: none;
+        }
+
+        .btn.primary:hover {
+            background-color: #0062cc;
+        }
+
+        .btn.secondary {
+            background-color: var(--accent-secondary);
+            color: white;
+            border: none;
+        }
+
+        .btn.secondary:hover {
+            background-color: #2bb550;
+        }
+
+        .btn.icon-only {
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: var(--bg-secondary);
+            min-width: 160px;
+            box-shadow: var(--shadow-md);
+            border-radius: 6px;
+            z-index: 11;
+            margin-top: 0.5rem;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: var(--bg-secondary);
+            box-shadow: var(--shadow-sm);
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 5;
+        }
+
+        .sidebar-collapsed .sidebar {
+            transform: translateX(-240px);
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-section {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .algorithm-list {
+            list-style: none;
+        }
+
+        .algorithm-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .algorithm-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .algorithm-item.active {
+            background-color: rgba(0, 113, 227, 0.1);
+            font-weight: 500;
+        }
+
+        .algorithm-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background-color: #eaeaea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .param-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .param-label {
+            flex: 0 0 40%;
+            font-size: 0.875rem;
+        }
+
+        .param-input {
+            flex: 1;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #d1d1d1;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .canvas-container {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-primary);
+        }
+
+        #algorithm-canvas {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            touch-action: none;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            background-color: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .control-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .control-btn.active {
+            background-color: rgba(0, 113, 227, 0.1);
+            color: var(--accent-primary);
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .speed-slider {
+            width: 100px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            z-index: 100;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            opacity: 0;
+        }
+
+        .algorithm-info {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            padding: 1rem;
+            max-width: 300px;
+            z-index: 5;
+            transform: translateX(350px);
+            transition: transform 0.3s ease;
+        }
+
+        .algorithm-info.visible {
+            transform: translateX(0);
+        }
+
+        .algorithm-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .algorithm-info-title {
+            font-weight: 600;
+        }
+
+        .algorithm-info-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .algorithm-info-close:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .algorithm-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .complexity-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .complexity-table th,
+        .complexity-table td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .complexity-table th {
+            color: var(--text-secondary);
+            font-weight: normal;
+        }
+
+        .status-bar {
+            padding: 0.5rem 1rem;
+            background-color: var(--bg-secondary);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-info {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Animation classes */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s forwards;
+        }
+
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 240px;
+            }
+
+            .sidebar-collapsed .sidebar {
+                transform: translateX(-200px);
+            }
+
+            .toolbar {
+                gap: 0.5rem;
+            }
+
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Icons (using unicode or simple shapes) */
+        .icon {
+            font-family: sans-serif;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Additional styles for specific algorithms */
+        .bar-element {
+            position: absolute;
+            bottom: 0;
+            background: linear-gradient(to top, var(--accent-primary), #60a5fa);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s ease, transform 0.3s ease;
+        }
+
+        .bar-element.comparing {
+            background: linear-gradient(to top, var(--accent-tertiary), #ffc078);
+        }
+
+        .bar-element.sorted {
+            background: linear-gradient(to top, var(--accent-secondary), #86efac);
+        }
+
+        .array-element {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: var(--accent-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .array-element.found {
+            background-color: var(--accent-secondary);
+            animation: pulse 0.5s 3;
+        }
+
+        .array-element.current {
+            background-color: var(--accent-tertiary);
+        }
+
+        .path-node {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .path-node.start {
+            background-color: var(--accent-secondary);
+            color: white;
+        }
+
+        .path-node.end {
+            background-color: var(--accent-tertiary);
+            color: white;
+        }
+
+        .path-node.wall {
+            background-color: var(--text-primary);
+        }
+
+        .path-node.visited {
+            background-color: rgba(0, 113, 227, 0.3);
+        }
+
+        .path-node.path {
+            background-color: var(--accent-primary);
+            color: white;
+        }
+
+        .path-edge {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.1);
+            transform-origin: 0 0;
+            z-index: -1;
+        }
+
+        .tree-node {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--accent-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .tree-node.highlighted {
+            background-color: var(--accent-tertiary);
+            transform: scale(1.2);
+        }
+
+        .tree-edge {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.2);
+            transform-origin: 0 0;
+            z-index: -1;
+            transition: background-color 0.3s ease;
+        }
+
+        .tree-edge.highlighted {
+            background-color: var(--accent-tertiary);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">
+                <span class="icon">⊛</span>
+            </div>
+            <span>Visual Algorithm Canvas</span>
+        </div>
+        <div class="toolbar">
+            <button id="info-button" class="btn">
+                <span class="icon">ℹ</span>
+                <span>Info</span>
+            </button>
+            <div class="dropdown">
+                <button class="btn">
+                    <span class="icon">⚙</span>
+                    <span>Options</span>
+                </button>
+                <div class="dropdown-content">
+                    <div class="dropdown-item" id="reset-canvas">
+                        <span class="icon">↺</span>
+                        <span>Reset Canvas</span>
+                    </div>
+                    <div class="dropdown-item" id="toggle-theme">
+                        <span class="icon">☾</span>
+                        <span>Toggle Theme</span>
+                    </div>
+                    <div class="dropdown-item" id="export-image">
+                        <span class="icon">⤓</span>
+                        <span>Export as Image</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container" id="main-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Algorithms</div>
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <span class="icon">◀</span>
+                </button>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">
+                    <span class="icon">⇅</span>
+                    <span>Sorting Algorithms</span>
+                </div>
+                <ul class="algorithm-list">
+                    <li class="algorithm-item active" data-algorithm="bubble-sort">
+                        <div class="algorithm-icon">⊻</div>
+                        <span>Bubble Sort</span>
+                    </li>
+                    <li class="algorithm-item" data-algorithm="quick-sort">
+                        <div class="algorithm-icon">⋔</div>
+                        <span>Quick Sort</span>
+                    </li>
+                    <li class="algorithm-item" data-algorithm="merge-sort">
+                        <div class="algorithm-icon">⋎</div>
+                        <span>Merge Sort</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">
+                    <span class="icon">🔍</span>
+                    <span>Searching Algorithms</span>
+                </div>
+                <ul class="algorithm-list">
+                    <li class="algorithm-item" data-algorithm="binary-search">
+                        <div class="algorithm-icon">⊟</div>
+                        <span>Binary Search</span>
+                    </li>
+                    <li class="algorithm-item" data-algorithm="linear-search">
+                        <div class="algorithm-icon">⊢</div>
+                        <span>Linear Search</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">
+                    <span class="icon">⊞</span>
+                    <span>Graph Algorithms</span>
+                </div>
+                <ul class="algorithm-list">
+                    <li class="algorithm-item" data-algorithm="bfs">
+                        <div class="algorithm-icon">↝</div>
+                        <span>Breadth-First Search</span>
+                    </li>
+                    <li class="algorithm-item" data-algorithm="dfs">
+                        <div class="algorithm-icon">↯</div>
+                        <span>Depth-First Search</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">
+                    <span class="icon">⊡</span>
+                    <span>Parameters</span>
+                </div>
+                <div id="algorithm-parameters">
+                    <!-- Parameters will be dynamically added based on the selected algorithm -->
+                    <div class="param-row">
+                        <div class="param-label">Array Size</div>
+                        <div class="param-input">
+                            <input type="range" id="array-size" min="5" max="100" value="30" />
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-label">Animation Speed</div>
+                        <div class="param-input">
+                            <input type="range" id="animation-speed" min="1" max="10" value="5" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="algorithm-canvas" width="800" height="500"></canvas>
+
+            <div class="controls">
+                <button class="control-btn" id="play-pause">
+                    <span class="icon">▶</span>
+                </button>
+                <button class="control-btn" id="step">
+                    <span class="icon">⊿</span>
+                </button>
+                <button class="control-btn" id="reset">
+                    <span class="icon">↺</span>
+                </button>
+                <div class="speed-control">
+                    <span class="icon">⏱</span>
+                    <input type="range" class="speed-slider" id="speed-slider" min="1" max="10" value="5" />
+                </div>
+            </div>
+
+            <div class="algorithm-info" id="algorithm-info">
+                <div class="algorithm-info-header">
+                    <div class="algorithm-info-title">Bubble Sort</div>
+                    <button class="algorithm-info-close">
+                        <span class="icon">✕</span>
+                    </button>
+                </div>
+                <div class="algorithm-description">
+                    Bubble Sort is a simple sorting algorithm that repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.
+                </div>
+                <table class="complexity-table">
+                    <tr>
+                        <th>Time Complexity:</th>
+                        <td>O(n²)</td>
+                    </tr>
+                    <tr>
+                        <th>Space Complexity:</th>
+                        <td>O(1)</td>
+                    </tr>
+                    <tr>
+                        <th>Best Case:</th>
+                        <td>O(n)</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-info">
+            <div class="status-item">
+                <span class="icon">↻</span>
+                <span id="operations-count">Operations: 0</span>
+            </div>
+            <div class="status-item">
+                <span class="icon">⏱</span>
+                <span id="time-complexity">Time: O(n²)</span>
+            </div>
+        </div>
+        <div class="status-item">
+            <span id="algorithm-status">Ready</span>
+        </div>
+    </div>
+
+    <script>
+        // Main application class
+        class AlgorithmVisualizer {
+            constructor() {
+                // Canvas setup
+                this.canvas = document.getElementById('algorithm-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvasWidth = this.canvas.width;
+                this.canvasHeight = this.canvas.height;
+
+                // Algorithm state
+                this.currentAlgorithm = 'bubble-sort';
+                this.algorithms = {
+                    'bubble-sort': new BubbleSort(this),
+                    'quick-sort': new QuickSort(this),
+                    'merge-sort': new MergeSort(this),
+                    'binary-search': new BinarySearch(this),
+                    'linear-search': new LinearSearch(this),
+                    'bfs': new BreadthFirstSearch(this),
+                    'dfs': new DepthFirstSearch(this)
+                };
+
+                // Animation control
+                this.isPlaying = false;
+                this.animationSpeed = 5;
+                this.operationsCount = 0;
+
+                // Data
+                this.arraySize = 30;
+                this.array = [];
+                this.resetArray();
+
+                // UI elements
+                this.algorithmItems = document.querySelectorAll('.algorithm-item');
+                this.sidebarToggle = document.getElementById('sidebar-toggle');
+                this.mainContainer = document.getElementById('main-container');
+                this.playPauseButton = document.getElementById('play-pause');
+                this.stepButton = document.getElementById('step');
+                this.resetButton = document.getElementById('reset');
+                this.speedSlider = document.getElementById('speed-slider');
+                this.infoButton = document.getElementById('info-button');
+                this.algorithmInfo = document.getElementById('algorithm-info');
+                this.algorithmInfoClose = document.querySelector('.algorithm-info-close');
+                this.arraySizeInput = document.getElementById('array-size');
+                this.animationSpeedInput = document.getElementById('animation-speed');
+                this.resetCanvasButton = document.getElementById('reset-canvas');
+                this.toggleThemeButton = document.getElementById('toggle-theme');
+                this.exportImageButton = document.getElementById('export-image');
+                this.operationsCountElement = document.getElementById('operations-count');
+                this.timeComplexityElement = document.getElementById('time-complexity');
+                this.algorithmStatusElement = document.getElementById('algorithm-status');
+
+                // Initialize
+                this.bindEvents();
+                this.updateAlgorithmInfo();
+                this.startVisualization();
+            }
+
+            bindEvents() {
+                // Algorithm selection
+                this.algorithmItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        this.algorithmItems.forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        this.currentAlgorithm = item.dataset.algorithm;
+                        this.resetVisualization();
+                        this.updateAlgorithmInfo();
+                    });
+                });
+
+                // Sidebar toggle
+                this.sidebarToggle.addEventListener('click', () => {
+                    this.mainContainer.classList.toggle('sidebar-collapsed');
+                    this.sidebarToggle.querySelector('.icon').textContent = 
+                        this.mainContainer.classList.contains('sidebar-collapsed') ? '▶' : '◀';
+                });
+
+                // Control buttons
+                this.playPauseButton.addEventListener('click', () => this.togglePlayPause());
+                this.stepButton.addEventListener('click', () => this.step());
+                this.resetButton.addEventListener('click', () => this.resetVisualization());
+                this.speedSlider.addEventListener('input', (e) => {
+                    this.animationSpeed = parseInt(e.target.value);
+                    this.animationSpeedInput.value = this.animationSpeed;
+                });
+
+                // Info panel
+                this.infoButton.addEventListener('click', () => {
+                    this.algorithmInfo.classList.toggle('visible');
+                });
+                this.algorithmInfoClose.addEventListener('click', () => {
+                    this.algorithmInfo.classList.remove('visible');
+                });
+
+                // Parameters
+                this.arraySizeInput.addEventListener('input', (e) => {
+                    this.arraySize = parseInt(e.target.value);
+                    this.resetArray();
+                    this.resetVisualization();
+                });
+                this.animationSpeedInput.addEventListener('input', (e) => {
+                    this.animationSpeed = parseInt(e.target.value);
+                    this.speedSlider.value = this.animationSpeed;
+                });
+
+                // Options dropdown
+                this.resetCanvasButton.addEventListener('click', () => this.resetVisualization());
+                this.toggleThemeButton.addEventListener('click', () => this.toggleTheme());
+                this.exportImageButton.addEventListener('click', () => this.exportImage());
+
+                // Window resize
+                window.addEventListener('resize', () => this.handleResize());
+            }
+
+            handleResize() {
+                const containerWidth = this.canvas.parentElement.clientWidth;
+                const containerHeight = this.canvas.parentElement.clientHeight;
+                
+                // Keep canvas proportional but fit within container
+                const aspectRatio = this.canvasWidth / this.canvasHeight;
+                
+                let newWidth = containerWidth - 40; // Margin
+                let newHeight = newWidth / aspectRatio;
+                
+                if (newHeight > containerHeight - 40) {
+                    newHeight = containerHeight - 40;
+                    newWidth = newHeight * aspectRatio;
+                }
+                
+                this.canvas.style.width = `${newWidth}px`;
+                this.canvas.style.height = `${newHeight}px`;
+            }
+
+            resetArray() {
+                this.array = [];
+                for (let i = 0; i < this.arraySize; i++) {
+                    this.array.push(Math.floor(Math.random() * 100) + 1);
+                }
+                this.operationsCount = 0;
+                this.updateOperationsCount();
+            }
+
+            updateOperationsCount() {
+                this.operationsCountElement.textContent = `Operations: ${this.operationsCount}`;
+            }
+
+            updateAlgorithmInfo() {
+                const algorithm = this.algorithms[this.currentAlgorithm];
+                
+                document.querySelector('.algorithm-info-title').textContent = algorithm.name;
+                document.querySelector('.algorithm-description').textContent = algorithm.description;
+                
+                const complexityTable = document.querySelector('.complexity-table');
+                complexityTable.innerHTML = `
+                    <tr>
+                        <th>Time Complexity:</th>
+                        <td>${algorithm.timeComplexity}</td>
+                    </tr>
+                    <tr>
+                        <th>Space Complexity:</th>
+                        <td>${algorithm.spaceComplexity}</td>
+                    </tr>
+                    <tr>
+                        <th>Best Case:</th>
+                        <td>${algorithm.bestCase}</td>
+                    </tr>
+                `;
+                
+                this.timeComplexityElement.textContent = `Time: ${algorithm.timeComplexity}`;
+            }
+
+            togglePlayPause() {
+                this.isPlaying = !this.isPlaying;
+                this.playPauseButton.querySelector('.icon').textContent = this.isPlaying ? '⏸' : '▶';
+                
+                if (this.isPlaying) {
+                    this.startVisualization();
+                    this.algorithmStatusElement.textContent = 'Running';
+                } else {
+                    this.algorithmStatusElement.textContent = 'Paused';
+                }
+            }
+
+            step() {
+                const algorithm = this.algorithms[this.currentAlgorithm];
+                const isDone = algorithm.step();
+                
+                if (isDone) {
+                    this.isPlaying = false;
+                    this.playPauseButton.querySelector('.icon').textContent = '▶';
+                    this.algorithmStatusElement.textContent = 'Completed';
+                }
+                
+                this.operationsCount++;
+                this.updateOperationsCount();
+                algorithm.draw();
+            }
+
+            startVisualization() {
+                if (!this.isPlaying) return;
+                
+                this.step();
+                
+                // Schedule next step based on animation speed
+                const delay = 1000 / this.animationSpeed;
+                setTimeout(() => this.startVisualization(), delay);
+            }
+
+            resetVisualization() {
+                this.isPlaying = false;
+                this.playPauseButton.querySelector('.icon').textContent = '▶';
+                
+                const algorithm = this.algorithms[this.currentAlgorithm];
+                algorithm.reset();
+                algorithm.draw();
+                
+                this.operationsCount = 0;
+                this.updateOperationsCount();
+                this.algorithmStatusElement.textContent = 'Ready';
+            }
+
+            toggleTheme() {
+                document.body.classList.toggle('dark-theme');
+                this.toggleThemeButton.querySelector('span:last-child').textContent = 
+                    document.body.classList.contains('dark-theme') ? 'Light Theme' : 'Dark Theme';
+            }
+
+            exportImage() {
+                const dataUrl = this.canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `${this.currentAlgorithm}-visualization.png`;
+                link.href = dataUrl;
+                link.click();
+            }
+        }
+
+        // Base Algorithm class
+        class Algorithm {
+            constructor(visualizer) {
+                this.visualizer = visualizer;
+                this.ctx = visualizer.ctx;
+                this.canvas = visualizer.canvas;
+                this.array = visualizer.array;
+                this.canvasWidth = visualizer.canvasWidth;
+                this.canvasHeight = visualizer.canvasHeight;
+                
+                this.name = 'Algorithm';
+                this.description = 'Base algorithm description';
+                this.timeComplexity = 'O(?)';
+                this.spaceComplexity = 'O(?)';
+                this.bestCase = 'O(?)';
+                
+                this.reset();
+            }
+            
+            reset() {
+                this.array = [...this.visualizer.array];
+                this.currentStep = 0;
+                this.isComplete = false;
+            }
+            
+            step() {
+                // To be implemented by subclasses
+                return true; // Return true when algorithm is complete
+            }
+            
+            draw() {
+                // Clear the canvas
+                this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+                
+                // To be implemented by subclasses
+            }
+        }
+
+        // Sorting Algorithms
+        class BubbleSort extends Algorithm {
+            constructor(visualizer) {
+                super(visualizer);
+                
+                this.name = 'Bubble Sort';
+                this.description = 'Bubble Sort is a simple sorting algorithm that repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.';
+                this.timeComplexity = 'O(n²)';
+                this.spaceComplexity = 'O(1)';
+                this.bestCase = 'O(n)';
+                
+                this.reset();
+            }
+            
+            reset() {
+                super.reset();
+                this.i = 0;
+                this.j = 0;
+                this.comparing = [-1, -1];
+                this.sorted = [];
+            }
+            
+            step() {
+                if (this.isComplete) return true;
+                
+                const n = this.array.length;
+                
+                // All elements are sorted
+                if (this.i >= n - 1) {
+                    this.isComplete = true;
+                    this.sorted = Array.from({length: n}, (_, i) => i);
+                    return true;
+                }
+                
+                this.comparing = [this.j, this.j + 1];
+                
+                // Compare and swap if needed
+                if (this.array[this.j] > this.array[this.j + 1]) {
+                    [this.array[this.j], this.array[this.j + 1]] = [this.array[this.j + 1], this.array[this.j]];
+                }
+                
+                this.j++;
+                
+                // If inner loop is complete
+                if (this.j >= n - this.i - 1) {
+                    this.sorted.push(n - this.i - 1);
+                    this.j = 0;
+                    this.i++;
+                }
+                
+                return false;
+            }
+            
+            draw() {
+                super.draw();
+                
+                const n = this.array.length;
+                const barWidth = this.canvasWidth / n;
+                const maxVal = Math.max(...this.array);
+                
+                // Draw each bar
+                for (let i = 0; i < n; i++) {
+                    const height = (this.array[i] / maxVal) * (this.canvasHeight - 50);
+                    const x = i * barWidth;
+                    const y = this.canvasHeight - height;
+                    
+                    // Set color based on state
+                    if (this.comparing.includes(i)) {
+                        this.ctx.fillStyle = 'orange';
+                    } else if (this.sorted.includes(i)) {
+                        this.ctx.fillStyle = 'green';
+                    } else {
+                        this.ctx.fillStyle = 'steelblue';
+                    }
+                    
+                    // Draw bar
+                    this.ctx.fillRect(x, y, barWidth - 1, height);
+                    
+                    // Draw value on top of the bar
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.font = '10px Arial';
+                    this.ctx.fillText(this.array[i], x + barWidth / 2 - 5, y - 5);
+                }
+            }
+        }
+
+        class QuickSort extends Algorithm {
+            constructor(visualizer) {
+                super(visualizer);
+                
+                this.name = 'Quick Sort';
+                this.description = 'Quick Sort is a divide-and-conquer algorithm that works by selecting a 'pivot' element and partitioning the array around the pivot.';
+                this.timeComplexity = 'O(n log n)';
+                this.spaceComplexity = 'O(log n)';
+                this.bestCase = 'O(n log n)';
+                
+                this.reset();
+            }
+            
+            reset() {
+                super.reset();
+                this.stack = [[0, this.array.length - 1]];
+                this.state = 'partition'; // 'partition' or 'quicksort'
+                this.pivot = -1;
+                this.comparing = [-1, -1];
+                this.sorted = [];
+                this.partitionState = {
+                    low: -1,
+                    high: -1,
+                    i: -1,
+                    j: -1
+                };
+            }
+            
+            step() {
+                if (this.isComplete) return true;
+                
+                // If stack is empty, we're done
+                if (this.stack.length === 0) {
+                    this.isComplete = true;
+                    this.sorted = Array.from({length: this.array.length}, (_, i) => i);
+                    return true;
+                }
+                
+                if (this.state === 'partition') {
+                    const [low, high] = this.stack.pop();
+                    
+                    // If subarray has one element or less, it's sorted
+                    if (low >= high) {
+                        this.sorted.push(low);
+                        return false;
+                    }
+                    
+                    // Initialize partition state
+                    this.partitionState = {
+                        low,
+                        high,
+                        i: low,
+                        j: low
+                    };
+                    
+                    this.pivot = this.array[high];
+                    this.state = 'quicksort';
+                } else { // state === 'quicksort'
+                    const { low, high, i, j } = this.partitionState;
+                    
+                    // If j reached the end, swap pivot and complete partition
+                    if (j === high) {
+                        [this.array[i], this.array[high]] = [this.array[high], this.array[i]];
+                        this.sorted.push(i);
+                        
+                        // Add subarrays to stack
+                        if (i - 1 > low) this.stack.push([low, i - 1]);
+                        if (high > i + 1) this.stack.push([i + 1, high]);
+                        
+                        this.state = 'partition';
+                        this.comparing = [-1, -1];
+                        return false;
+                    }
+                    
+                    this.comparing = [j, high]; // Compare current with pivot
+                    
+                    // If current element is less than pivot, swap and increment i
+                    if (this.array[j] < this.pivot) {
+                        [this.array[i], this.array[j]] = [this.array[j], this.array[i]];
+                        this.partitionState.i++;
+                    }
+                    
+                    // Move to next element
+                    this.partitionState.j++;
+                }
+                
+                return false;
+            }
+            
+            draw() {
+                super.draw();
+                
+                const n = this.array.length;
+                const barWidth = this.canvasWidth / n;
+                const maxVal = Math.max(...this.array);
+                
+                // Draw each bar
+                for (let i = 0; i < n; i++) {
+                    const height = (this.array[i] / maxVal) * (this.canvasHeight - 50);
+                    const x = i * barWidth;
+                    const y = this.canvasHeight - height;
+                    
+                    // Set color based on state
+                    if (this.comparing.includes(i)) {
+                        this.ctx.fillStyle = 'orange';
+                    } else if (i === this.partitionState.high && this.state === 'quicksort') {
+                        this.ctx.fillStyle = 'purple'; // Pivot
+                    } else if (this.sorted.includes(i)) {
+                        this.ctx.fillStyle = 'green';
+                    } else if (i >= this.partitionState.low && i <= this.partitionState.high && this.state === 'quicksort') {
+                        this.ctx.fillStyle = 'lightblue'; // Current partition
+                    } else {
+                        this.ctx.fillStyle = 'steelblue';
+                    }
+                    
+                    // Draw bar
+                    this.ctx.fillRect(x, y, barWidth - 1, height);
+                    
+                    // Draw value on top of the bar
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.font = '10px Arial';
+                    this.ctx.fillText(this.array[i], x + barWidth / 2 - 5, y - 5);
+                }
+            }
+        }
+
+        class MergeSort extends Algorithm {
+            constructor(visualizer) {
+                super(visualizer);
+                
+                this.name = 'Merge Sort';
+                this.description = 'Merge Sort is a divide-and-conquer algorithm that divides the input array into two halves, calls itself for the two halves, and then merges the sorted halves.';
+                this.timeComplexity = 'O(n log n)';
+                this.spaceComplexity = 'O(n)';
+                this.bestCase = 'O(n log n)';
+                
+                this.reset();
+            }
+            
+            reset() {
+                super.reset();
+                
+                this.subarrays = []; // Track all subarrays
+                this.mergeSteps = []; // Steps to visualize merging
+                this.currentStep = 0;
+                
+                // Initial array split steps
+                this.generateMergeSortSteps(0, this.array.length - 1);
+            }
+            
+            generateMergeSortSteps(start, end) {
+                if (start >= end) return;
+                
+                const mid = Math.floor((start + end) / 2);
+                
+                // Split into subarrays
+                this.subarrays.push({
+                    start,
+                    mid,
+                    end,
+                    type: 'split'
+                });
+                
+                // Left and right recursive calls
+                this.generateMergeSortSteps(start, mid);
+                this.generateMergeSortSteps(mid + 1, end);
+                
+                // Merge steps
+                let i = start;
+                let j = mid + 1;
+                let k = 0;
+                const temp = Array(end - start + 1).fill(0);
+                
+                while (i <= mid && j <= end) {
+                    this.mergeSteps.push({
+                        start,
+                        end,
+                        comparing: [i, j],
+                        temp: [...temp],
+                        indices: { i, j, k },
+                        type: 'compare'
+                    });
+                    
+                    if (this.array[i] <= this.array[j]) {
+                        temp[k++] = this.array[i++];
+                    } else {
+                        temp[k++] = this.array[j++];
+                    }
+                }
+                
+                while (i <= mid) {
+                    this.mergeSteps.push({
+                        start,
+                        end,
+                        comparing: [i, -1],
+                        temp: [...temp],
+                        indices: { i, j, k },
+                        type: 'leftRemaining'
+                    });
+                    
+                    temp[k++] = this.array[i++];
+                }
+                
+                while (j <= end) {
+                    this.mergeSteps.push({
+                        start,
+                        end,
+                        comparing: [-1, j],
+                        temp: [...temp],
+                        indices: { i, j, k },
+                        type: 'rightRemaining'
+                    });
+                    
+                    temp[k++] = this.array[j++];
+                }
+                
+                // Copy back temp array to original array
+                for (let p = 0; p < temp.length; p++) {
+                    this.mergeSteps.push({
+                        start,
+                        end,
+                        copyIndex: start + p,
+                        copyValue: temp[p],
+                        type: 'copy'
+                    });
+                }
+            }
+            
+            step() {
+                if (this.isComplete) return true;
+                
+                // Execute merge steps
+                if (this.currentStep < this.mergeSteps.length) {
+                    const step = this.mergeSteps[this.currentStep++];
+                    
+                    if (step.type === 'copy') {
+                        this.array[step.copyIndex] = step.copyValue;
+                    }
+                    
+                    return false;
+                }
+                
+                this.isComplete = true;
+                return true;
+            }
+            
+            draw() {
+                super.draw();
+                
+                const n = this.array.length;
+                const barWidth = this.canvasWidth / n;
+                const maxVal = Math.max(...this.array);
+                
+                // Draw each bar
+                for (let i = 0; i < n; i++) {
+                    const height = (this.array[i] / maxVal) * (this.canvasHeight - 50);
+                    const x = i * barWidth;
+                    const y = this.canvasHeight - height;
+                    
+                    // Set color based on state
+                    let color = 'steelblue';
+                    
+                    if (this.currentStep < this.mergeSteps.length) {
+                        const step = this.mergeSteps[this.currentStep - 1];
+                        
+                        if (step.comparing && step.comparing.includes(i)) {
+                            color = 'orange';
+                        } else if (step.type === 'copy' && step.copyIndex === i) {
+                            color = 'green';
+                        } else if (i >= step.start && i <= step.end) {
+                            color = 'lightblue';
+                        }
+                    }
+                    
+                    this.ctx.fillStyle = color;
+                    this.ctx.fillRect(x, y, barWidth - 1, height);
+                    
+                    // Draw value on top of the bar
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.font = '10px Arial';
+                    this.ctx.fillText(this.array[i], x + barWidth / 2 - 5, y - 5);
+                }
+            }
+        }
+
+        // Searching Algorithms
+        class BinarySearch extends Algorithm {
+            constructor(visualizer) {
+                super(visualizer);
+                
+                this.name = 'Binary Search';
+                this.description = 'Binary Search is a searching algorithm that finds the position of a target value within a sorted array by repeatedly dividing the search interval in half.';
+                this.timeComplexity = 'O(log n)';
+                this.spaceComplexity = 'O(1)';
+                this.bestCase = 'O(1)';
+                
+                this.reset();
+            }
+            
+            reset() {
+                super.reset();
+                
+                // Sort the array for binary search
+                this.array.sort((a, b) => a - b);
+                
+                this.target = this.array[Math.floor(Math.random() * this.array.length)];
+                this.left = 0;
+                this.right = this.array.length - 1;
+                this.mid = -1;
+                this.found = false;
+                this.foundIndex = -1;
+            }
+            
+            step() {
+                if (this.isComplete) return true;
+                
+                if (this.left <= this.right) {
+                    this.mid = Math.floor((this.left + this.right) / 2);
+                    
+                    if (this.array[this.mid] === this.target) {
+                        this.found = true;
+                        this.foundIndex = this.mid;
+                        this.isComplete = true;
+                        return true;
+                    }
+                    
+                    if (this.array[this.mid] < this.target) {
+                        this.left = this.mid + 1;
+                    } else {
+                        this.right = this.mid - 1;
+                    }
+                    
+                    return false;
+                }
+                
+                this.isComplete = true;
+                return true;
+            }
+            
+            draw() {
+                super.draw();
+                
+                const n = this.array.length;
+                const elementSize = 40;
+                const spacing = 10;
+                const totalWidth = n * (elementSize + spacing);
+                const startX = (this.canvasWidth - totalWidth) / 2;
+                const y = this.canvasHeight / 2;
+                
+                // Draw array elements
+                for (let i = 0; i < n; i++) {
+                    const x = startX + i * (elementSize + spacing);
+                    
+                    // Draw circle
+                    this.ctx.beginPath();
+                    this.ctx.arc(x + elementSize / 2, y, elementSize / 2, 0, Math.PI * 2);
+                    
+                    // Set color based on state
+                    if (i === this.mid) {
+                        this.ctx.fillStyle = 'orange';
+                    } else if (i === this.foundIndex && this.found) {
+                        this.ctx.fillStyle = 'green';
+                    } else if (i >= this.left && i <= this.right) {
+                        this.ctx.fillStyle = 'lightblue';
+                    } else {
+                        this.ctx.fillStyle = '#ccc';
+                    }
+                    
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                    
+                    // Draw element value
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.font = '14px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(this.array[i], x + elementSize / 2, y);
+                }
+                
+                // Draw target value
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '16px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(`Target: ${this.target}`, this.canvasWidth / 2, y - 100);
+                
+                // Draw search range
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '14px Arial';
+                this.ctx.fillText(`Search Range: [${this.left}, ${this.right}]`, this.canvasWidth / 2, y + 100);
+                
+                // Draw result if search is complete
+                if (this.isComplete) {
+                    this.ctx.fillStyle = this.found ? 'green' : 'red';
+                    this.ctx.font = '16px Arial';
+                    this.ctx.fillText(
+                        this.found ? `Found at index ${this.foundIndex}` : 'Not found',
+                        this.canvasWidth / 2,
+                        y + 130
+                    );
+                }
+            }
+        }
+
+        class LinearSearch extends Algorithm {
+            constructor(visualizer) {
+                super(visualizer);
+                
+                this.name = 'Linear Search';
+                this.description = 'Linear Search is a simple searching algorithm that checks each element of the array until it finds the target value or reaches the end.';
+                this.timeComplexity = 'O(n)';
+                this.spaceComplexity = 'O(1)';
+                this.bestCase = 'O(1)';
+                
+                this.reset();
+            }
+            
+            reset() {
+                super.reset();
+                
+                this.target = this.array[Math.floor(Math.random() * this.array.length)];
+                this.currentIndex = 0;
+                this.found = false;
+                this.foundIndex = -1;
+            }
+            
+            step() {
+                if (this.isComplete) return true;
+                
+                if (this.currentIndex < this.array.length) {
+                    if (this.array[this.currentIndex] === this.target) {
+                        this.found = true;
+                        this.foundIndex = this.currentIndex;
+                        this.isComplete = true;
+                        return true;
+                    }
+                    
+                    this.currentIndex++;
+                    return false;
+                }
+                
+                this.isComplete = true;
+                return true;
+            }
+            
+            draw() {
+                super.draw();
+                
+                const n = this.array.length;
+                const elementSize = 40;
+                const spacing = 10;
+                const totalWidth = n * (elementSize + spacing);
+                const startX = (this.canvasWidth - totalWidth) / 2;
+                const y = this.canvasHeight / 2;
+                
+                // Draw array elements
+                for (let i = 0; i < n; i++) {
+                    const x = startX + i * (elementSize + spacing);
+                    
+                    // Draw circle
+                    this.ctx.beginPath();
+                    this.ctx.arc(x + elementSize / 2, y, elementSize / 2, 0, Math.PI * 2);
+                    
+                    // Set color based on state
+                    if (i === this.currentIndex && !this.isComplete) {
+                        this.ctx.fillStyle = 'orange';
+                    } else if (i === this.foundIndex && this.found) {
+                        this.ctx.fillStyle = 'green';
+                    } else if (i < this.currentIndex) {
+                        this.ctx.fillStyle = 'lightblue';
+                    } else {
+                        this.ctx.fillStyle = 'steelblue';
+                    }
+                    
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                    
+                    // Draw element value
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = '14px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(this.array[i], x + elementSize / 2, y);
+                }
+                
+                // Draw target value
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '16px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(`Target: ${this.target}`, this.canvasWidth / 2, y - 100);
+                
+                // Draw current index
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '14px Arial';
+                this.ctx.fillText(`Current Index: ${this.currentIndex}`, this.canvasWidth / 2, y + 100);
+                
+                // Draw result if search is complete
+                if (this.isComplete) {
+                    this.ctx.fillStyle = this.found ? 'green' : 'red';
+                    this.ctx.font = '16px Arial';
+                    this.ctx.fillText(
+                        this.found ? `Found at index ${this.foundIndex}` : 'Not found',
+                        this.canvasWidth / 2,
+                        y + 130
+                    );
+                }
+            }
+        }
+
+        // Graph Algorithms
+        class BreadthFirstSearch extends Algorithm {
+            constructor(visualizer) {
+                super(visualizer);
+                
+                this.name = 'Breadth-First Search';
+                this.description = 'BFS is an algorithm for traversing or searching tree or graph data structures that explores all the neighbor nodes at the present depth before moving on to nodes at the next depth level.';
+                this.timeComplexity = 'O(V + E)';
+                this.spaceComplexity = 'O(V)';
+                this.bestCase = 'O(1)';
+                
+                this.reset();
+            }
+            
+            reset() {
+                super.reset();
+                
+                // Create a graph
+                this.nodes = [];
+                this.edges = [];
+                this.nodeRadius = 20;
+                
+                // Create nodes
+                const numNodes = 12;
+                const centerX = this.canvasWidth / 2;
+                const centerY = this.canvasHeight / 2;
+                const radius = Math.min(this.canvasWidth, this.canvasHeight) / 3;
+                
+                for (let i = 0; i < numNodes; i++) {
+                    const angle = (i / numNodes) * Math.PI * 2;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    
+                    this.nodes.push({
+                        id: i,
+                        x,
+                        y,
+                        value: i,
+                        state: 'unvisited' // 'unvisited', 'queued', 'visited'
+                    });
+                }
+                
+                // Create random edges
+                for (let i = 0; i < numNodes; i++) {
+                    // Each node connects to 2-3 others
+                    const numConnections = Math.floor(Math.random() * 2) + 2;
+                    
+                    for (let j = 0; j < numConnections; j++) {
+                        // Random target node that's not self
+                        let target;
+                        do {
+                            target = Math.floor(Math.random() * numNodes);
+                        } while (target === i);
+                        
+                        // Check if edge already exists
+                        if (!this.edges.some(edge => 
+                            (edge.source === i && edge.target === target) || 
+                            (edge.source === target && edge.target === i)
+                        )) {
+                            this.edges.push({
+                                source: i,
+                                target: target,
+                                state: 'unvisited' // 'unvisited', 'discovery', 'cross'
+                            });
+                        }
+                    }
+                }
+                
+                // BFS state
+                this.startNode = 0;
+                this.queue = [this.startNode];
+                this.visited = new Set([this.startNode]);
+                this.nodes[this.startNode].state = 'queued';
+                this.currentNode = -1;
+            }
+            
+            step() {
+                if (this.isComplete) return true;
+                
+                if (this.queue.length === 0) {
+                    this.isComplete = true;
+                    return true;
+                }
+                
+                // Dequeue a node
+                this.currentNode = this.queue.shift();
+                this.nodes[this.currentNode].state = 'visited';
+                
+                // Find all adjacent nodes
+                const adjacentEdges = this.edges.filter(edge => 
+                    edge.source === this.currentNode || edge.target === this.currentNode
+                );
+                
+                for (const edge of adjacentEdges) {
+                    const neighbor = edge.source === this.currentNode ? edge.target : edge.source;
+                    
+                    if (!this.visited.has(neighbor)) {
+                        this.queue.push(neighbor);
+                        this.visited.add(neighbor);
+                        this.nodes[neighbor].state = 'queued';
+                        edge.state = 'discovery';
+                    } else if (edge.state === 'unvisited') {
+                        edge.state = 'cross';
+                    }
+                }
+                
+                return false;
+            }
+            
+            draw() {
+                super.draw();
+                
+                // Draw edges first
+                for (const edge of this.edges) {
+                    const source = this.nodes[edge.source];
+                    const target = this.nodes[edge.target];
+                    
+                    // Determine edge color
+                    let color;
+                    if (edge.state === 'discovery') {
+                        color = '#34c759'; // Green for discovery edges
+                    } else if (edge.state === 'cross') {
+                        color = '#ff9500'; // Orange for cross edges
+                    } else {
+                        color = '#d1d1d1'; // Gray for unvisited
+                    }
+                    
+                    // Draw edge
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(source.x, source.y);
+                    this.ctx.lineTo(target.x, target.y);
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+                
+                // Draw nodes
+                for (const node of this.nodes) {
+                    // Determine node color
+                    let color;
+                    if (node.id === this.startNode) {
+                        color = '#34c759'; // Green for start node
+                    } else if (node.state === 'visited') {
+                        color = '#0071e3'; // Blue for visited
+                    } else if (node.state === 'queued') {
+                        color = '#ff9500'; // Orange for queued
+                    } else {
+                        color = '#8e8e93'; // Gray for unvisited
+                    }
+                    
+                    // Draw node
+                    this.ctx.beginPath();
+                    this.ctx.arc(node.x, node.y, this.nodeRadius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = color;
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#ffffff';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                    
+                    // Draw node value
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = '12px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(node.value, node.x, node.y);
+                }
+                
+                // Draw queue status
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '16px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(
+                    `Queue: [${this.queue.join(', ')}]`,
+                    this.canvasWidth / 2,
+                    this.canvasHeight - 30
+                );
+                
+                // Draw current node
+                if (this.currentNode !== -1) {
+                    this.ctx.fillText(
+                        `Current Node: ${this.currentNode}`,
+                        this.canvasWidth / 2,
+                        30
+                    );
+                }
+            }
+        }
+
+        class DepthFirstSearch extends Algorithm {
+            constructor(visualizer) {
+                super(visualizer);
+                
+                this.name = 'Depth-First Search';
+                this.description = 'DFS is an algorithm for traversing or searching tree or graph data structures that explores as far as possible along each branch before backtracking.';
+                this.timeComplexity = 'O(V + E)';
+                this.spaceComplexity = 'O(V)';
+                this.bestCase = 'O(1)';
+                
+                this.reset();
+            }
+            
+            reset() {
+                super.reset();
+                
+                // Create a graph
+                this.nodes = [];
+                this.edges = [];
+                this.nodeRadius = 20;
+                
+                // Create nodes
+                const numNodes = 12;
+                const centerX = this.canvasWidth / 2;
+                const centerY = this.canvasHeight / 2;
+                const radius = Math.min(this.canvasWidth, this.canvasHeight) / 3;
+                
+                for (let i = 0; i < numNodes; i++) {
+                    const angle = (i / numNodes) * Math.PI * 2;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    
+                    this.nodes.push({
+                        id: i,
+                        x,
+                        y,
+                        value: i,
+                        state: 'unvisited' // 'unvisited', 'visited', 'backtracked'
+                    });
+                }
+                
+                // Create random edges
+                for (let i = 0; i < numNodes; i++) {
+                    // Each node connects to 2-3 others
+                    const numConnections = Math.floor(Math.random() * 2) + 2;
+                    
+                    for (let j = 0; j < numConnections; j++) {
+                        // Random target node that's not self
+                        let target;
+                        do {
+                            target = Math.floor(Math.random() * numNodes);
+                        } while (target === i);
+                        
+                        // Check if edge already exists
+                        if (!this.edges.some(edge => 
+                            (edge.source === i && edge.target === target) || 
+                            (edge.source === target && edge.target === i)
+                        )) {
+                            this.edges.push({
+                                source: i,
+                                target: target,
+                                state: 'unvisited' // 'unvisited', 'tree', 'back'
+                            });
+                        }
+                    }
+                }
+                
+                // DFS state
+                this.startNode = 0;
+                this.stack = [this.startNode];
+                this.visited = new Set();
+                this.currentNode = -1;
+                this.dfsTree = {}; // To track parent-child relationships
+            }
+            
+            step() {
+                if (this.isComplete) return true;
+                
+                if (this.stack.length === 0) {
+                    this.isComplete = true;
+                    return true;
+                }
+                
+                // Pop a node from the stack
+                this.currentNode = this.stack.pop();
+                
+                // If already visited, continue
+                if (this.visited.has(this.currentNode)) {
+                    return false;
+                }
+                
+                // Mark as visited
+                this.visited.add(this.currentNode);
+                this.nodes[this.currentNode].state = 'visited';
+                
+                // Find all adjacent nodes
+                const adjacentEdges = this.edges.filter(edge => 
+                    edge.source === this.currentNode || edge.target === this.currentNode
+                );
+                
+                // Process in reverse to maintain DFS preorder
+                for (let i = adjacentEdges.length - 1; i >= 0; i--) {
+                    const edge = adjacentEdges[i];
+                    const neighbor = edge.source === this.currentNode ? edge.target : edge.source;
+                    
+                    if (!this.visited.has(neighbor)) {
+                        this.stack.push(neighbor);
+                        this.dfsTree[neighbor] = this.currentNode; // Record parent
+                        edge.state = 'tree';
+                    } else if (edge.state === 'unvisited') {
+                        edge.state = 'back';
+                    }
+                }
+                
+                return false;
+            }
+            
+            draw() {
+                super.draw();
+                
+                // Draw edges first
+                for (const edge of this.edges) {
+                    const source = this.nodes[edge.source];
+                    const target = this.nodes[edge.target];
+                    
+                    // Determine edge color
+                    let color;
+                    if (edge.state === 'tree') {
+                        color = '#34c759'; // Green for tree edges
+                    } else if (edge.state === 'back') {
+                        color = '#ff9500'; // Orange for back edges
+                    } else {
+                        color = '#d1d1d1'; // Gray for unvisited
+                    }
+                    
+                    // Draw edge
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(source.x, source.y);
+                    this.ctx.lineTo(target.x, target.y);
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+                
+                // Draw nodes
+                for (const node of this.nodes) {
+                    // Determine node color
+                    let color;
+                    if (node.id === this.startNode) {
+                        color = '#34c759'; // Green for start node
+                    } else if (node.id === this.currentNode) {
+                        color = '#ff3b30'; // Red for current node
+                    } else if (node.state === 'visited') {
+                        color = '#0071e3'; // Blue for visited
+                    } else {
+                        color = '#8e8e93'; // Gray for unvisited
+                    }
+                    
+                    // Draw node
+                    this.ctx.beginPath();
+                    this.ctx.arc(node.x, node.y, this.nodeRadius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = color;
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#ffffff';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                    
+                    // Draw node value
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = '12px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(node.value, node.x, node.y);
+                }
+                
+                // Draw stack status
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '16px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(
+                    `Stack: [${this.stack.join(', ')}]`,
+                    this.canvasWidth / 2,
+                    this.canvasHeight - 30
+                );
+                
+                // Draw current node
+                if (this.currentNode !== -1) {
+                    this.ctx.fillText(
+                        `Current Node: ${this.currentNode}`,
+                        this.canvasWidth / 2,
+                        30
+                    );
+                }
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new AlgorithmVisualizer();
+            
+            // Handle initial resize
+            app.handleResize();
+        });
+    </script>
+</body>
+</html>
