@@ -1,3 +1,6 @@
+# GET RID OF THIS REPO and/or make it private... asap. :)
+
+
 # AI-Human Collaborative Exploration
 
 Welcome to a repository dedicated to exploring the possibilities of AI-human collaboration through practical projects. This is an experimental garden where we plant seeds of collaborative methods and watch what grows.
